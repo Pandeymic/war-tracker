@@ -8,7 +8,8 @@ export default function App() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const res = await fetch('/.netlify/functions/getNews');
+        const res = await fetch('/api/getNews');
+
         const data = await res.json();
         setEvents(data);
       } catch (err) {
