@@ -1,5 +1,3 @@
-const fetch = require('node-fetch');
-
 export default async function handler(req, res) {
   const API_KEY = process.env.NEWS_API_KEY;
 
@@ -12,7 +10,7 @@ export default async function handler(req, res) {
     const events = data.articles.map((a, i) => ({
       id: 'event-' + i,
       title: a.title,
-      lat: 32 + i * 0.1, // fake geolocation
+      lat: 32 + i * 0.1,
       lng: 53 + i * 0.1,
       date: a.publishedAt.split('T')[0],
       link: a.url
