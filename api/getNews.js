@@ -1,20 +1,40 @@
 export default async function handler(req, res) {
   const API_KEY = process.env.NEWS_API_KEY;
-
-  const url = `https://newsapi.org/v2/everything?q=Israel+Iran+attack&language=en&sortBy=publishedAt&pageSize=10&apiKey=${API_KEY}`;
+  const url = `https://newsapi.org/v2/everything?q=Israel+Iran+conflict&language=en&sortBy=publishedAt&pageSize=10&apiKey=${API_KEY}`;
 
   try {
     const response = await fetch(url);
     const data = await response.json();
 
-    const events = data.articles.map((a, i) => ({
-      id: 'event-' + i,
-      title: a.title,
-      lat: 32 + i * 0.1,
-      lng: 53 + i * 0.1,
-      date: a.publishedAt.split('T')[0],
-      link: a.url
-    }));
+    const knownCities = ['Tehran', 'Tel Aviv', 'Jerusalem', 'Isfahan', 'Damascus', 'Baghdad', 'Beirut'];
+
+    const events = await Promise.all(
+      data.articles.map(async (a, i) => {
+        const match = knownCities.find(city =>
+          a.title.includes(city) || (a.description && a.description.includes(city))
+        );
+
+        let coords = { lat: 32.0 + i * 0.1, lng: 53.0 + i * 0.1 }; // fallback
+        if (match) {
+          const geo = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(match)}`);
+          const result = await geo.json();
+          if (result[0]) {
+            coords = {
+              lat: parseFloat(result[0].lat),
+              lng: parseFloat(result[0].lon)
+            };
+          }
+        }
+
+        return {
+          id: 'event-' + i,
+          title: a.title,
+          date: a.publishedAt.split('T')[0],
+          link: a.url,
+          ...coords
+        };
+      })
+    );
 
     res.status(200).json(events);
   } catch (err) {
